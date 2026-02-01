@@ -1,0 +1,4 @@
+Resume Text,Role,Missing Skills,Study Plan
+"Skills: HTML, CSS, JS","Frontend Developer","React, Tailwind, State Management","[{\"topic\": \"React Fundamentals\", \"duration\": \"3 Days\", \"youtube_search_term\": \"React crash course 2024\", \"reason\": \"Industry standard for frontend.\"}]"
+"Skills: Basic Python","Data Scientist","Pandas, NumPy, Scikit-Learn","[{\"topic\": \"Data Analysis with Pandas\", \"duration\": \"5 Days\", \"youtube_search_term\": \"Pandas tutorial for beginners\", \"reason\": \"Fundamental for data manipulation.\"}]"
+"Skills: Java, SQL","Backend Developer","Spring Boot, Microservices, Redis","[{\"topic\": \"Spring Boot Basics\", \"duration\": \"4 Days\", \"youtube_search_term\": \"Spring Boot full course\", \"reason\": \"Most popular Java backend framework.\"}]"
