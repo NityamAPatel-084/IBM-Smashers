@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment variables
+.env
+server/.env
+client/.env
+.env.local
+.env.production
+
+# Build outputs
+client/dist/
+client/build/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python virtual environment
+.venv/
+venv/
+env/
+
+# Misc
+*.bak
+*.tmp
