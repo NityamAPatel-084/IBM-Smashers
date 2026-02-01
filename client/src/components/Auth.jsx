@@ -153,6 +153,20 @@ const Auth = ({ onLogin }) => {
                             </>
                         )}
                     </button>
+
+                    {/* Demo Login Option */}
+                    <div className="relative flex items-center justify-center py-2">
+                        <div className="border-t border-slate-200 w-full absolute"></div>
+                        <span className="bg-white px-4 text-xs font-bold text-slate-400 relative uppercase tracking-widest">Or</span>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => onLogin({ email: 'demo@kaushal.ai', user_metadata: { full_name: 'Demo User' } })}
+                        className="w-full bg-white border-2 border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 text-slate-600 font-bold py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                        <span>Continue as Guest / Demo</span>
+                    </button>
                 </form>
 
                 <div className="mt-8 text-center">

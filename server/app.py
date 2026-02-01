@@ -100,43 +100,61 @@ def get_mock_response(language):
 def health_check():
     return "Kaushal-Bot Backend is Running! Use /analyze endpoint.", 200
 
-# Pre-defined "Model" of what a Full Stack Developer needs
-FULL_STACK_MODEL = {
-    "Frontend": ["HTML", "CSS", "JavaScript", "React", "Redux", "Tailwind", "Bootstrap"],
-    "Backend": ["Node.js", "Express", "Python", "Django", "Flask", "Java"],
-    "Database": ["MongoDB", "SQL", "PostgreSQL", "MySQL", "NoSQL"],
-    "DevOps": ["Git", "GitHub", "Docker", "AWS", "Heroku", "Netlify", "CI/CD"]
+# Multi-Role "Expert System" Model for deterministic skill gap analysis
+SKILL_MODELS = {
+    "Full Stack Developer": {
+        "Frontend": ["HTML", "CSS", "JavaScript", "React", "Redux", "Tailwind", "Bootstrap", "Next.js"],
+        "Backend": ["Node.js", "Express", "Python", "Django", "Flask", "Java", "PHP"],
+        "Database": ["MongoDB", "SQL", "PostgreSQL", "MySQL", "Prisma", "Redis"],
+        "MustHaves": ["React", "Node.js", "SQL", "Git"]
+    },
+    "Data Scientist": {
+        "Languages": ["Python", "R", "SQL", "Scala"],
+        "ML_Libraries": ["Scikit-learn", "Pandas", "NumPy", "TensorFlow", "PyTorch", "Keras"],
+        "Visualization": ["Tableau", "PowerBI", "Matplotlib", "Seaborn"],
+        "MustHaves": ["Python", "Pandas", "Scikit-learn", "SQL"]
+    },
+    "DevOps Engineer": {
+        "Cloud": ["AWS", "Azure", "GCP", "DigitalOcean"],
+        "Containers": ["Docker", "Kubernetes", "Containerd"],
+        "CI_CD": ["Jenkins", "GitHub Actions", "GitLab CI", "CircleCI"],
+        "Infrastructure": ["Terraform", "Ansible", "CloudFormation"],
+        "MustHaves": ["Docker", "Kubernetes", "AWS", "Git"]
+    },
+    "Mobile App Developer": {
+        "CrossPlatform": ["React Native", "Flutter", "Ionic"],
+        "Native": ["Swift", "Kotlin", "Java", "Objective-C"],
+        "Tools": ["Xcode", "Android Studio", "Firebase"],
+        "MustHaves": ["React Native", "Flutter", "Mobile UI", "API"]
+    }
 }
 
-def local_skill_analysis(text):
+def local_skill_analysis(text, target_role):
     """
     Acts as a local 'ML' classifier using keyword matching tokens.
-    Returns a list of missing critical skills.
+    Returns a list of missing critical skills based on the target role.
     """
     text_lower = text.lower()
-    found_skills = set()
     missing_skills = []
     
-    # Check for presence of skills
-    for category, skills in FULL_STACK_MODEL.items():
-        category_has_skill = False
-        for skill in skills:
-            # Simple keyword matching (can be enhanced with regex)
-            if skill.lower() in text_lower:
-                found_skills.add(skill)
-                category_has_skill = True
+    # Get model for the specific role (fallback to Full Stack)
+    role_model = SKILL_MODELS.get(target_role, SKILL_MODELS["Full Stack Developer"])
+    
+    # Check category coverage
+    for category, skills in role_model.items():
+        if category == "MustHaves": continue
         
-        # If a whole category is missing strings, add a generic gap
-        if not category_has_skill:
-            missing_skills.append(f"Complete {category} Knowledge")
-        else:
-            # If they have some, checking for specific advanced ones
-            # For this simple "model", we just return key missing ones if category is weak
-            pass
+        category_found = False
+        for skill in skills:
+            if skill.lower() in text_lower:
+                category_found = True
+                break
+        
+        if not category_found:
+            missing_skills.append(f"Basic {category} Knowledge")
 
-    # Explicit check for "Must Haves" for the specific role
-    must_haves = ["React", "Node.js", "MongoDB", "Git"]
-    for skill in must_haves:
+    # Explicit check for "Must Haves"
+    for skill in role_model.get("MustHaves", []):
         if skill.lower() not in text_lower:
             missing_skills.append(skill)
             
@@ -149,6 +167,7 @@ def analyze():
         file = request.files.get('file')
         text_input = data.get('text')
         language = data.get('language', 'Hindi')
+        target_role = data.get('role', 'Full Stack Developer')  # NEW: Target role
 
         # 1. Input Validation
         resume_text = ""
@@ -165,7 +184,7 @@ def analyze():
 
         # 2. Local "Efficiency" Model Analysis
         # We process skills locally to save token cost and ensure accuracy
-        detected_missing = local_skill_analysis(resume_text)
+        detected_missing = local_skill_analysis(resume_text, target_role)
         
         # If local analysis found nothing missing (perfect resume?), add an advanced topic
         if not detected_missing:
@@ -176,54 +195,54 @@ def analyze():
             print("Gemini API Key missing. Returning Mock Data.")
             return jsonify(get_mock_response(language))
 
-        print(f"Analyzing with Gemini (Language: {language})...")
+        print(f"Analyzing with Gemini (Language: {language}, Role: {target_role})...")
         print(f"Local Model Identified Gaps: {detected_missing}")
         
         model = genai.GenerativeModel('gemini-pro')
         
-        # We feed the LOCALLY detected gaps to the AI to "Train" its focus
-        # Using the detailed Role-Based Prompt provided by the user
+        # Enhanced prompt combining both approaches
         prompt = f"""
 ### ROLE
-You are an expert Technical Career Counselor and Curriculum Developer for Indian engineering students. Your goal is to analyze a student's resume, compare it against the current Indian market requirements for a "Junior Full-Stack Developer", and create a personalized upskilling plan in the student's local language (Hindi or Gujarati).
+You are an expert Technical Career Counselor and Curriculum Developer for Indian engineering students.
+
+### TASK
+Analyze this resume against the requirements for a **{target_role}** position in the Indian job market.
 
 ### INPUT DATA
-User Resume Text: {resume_text}
-Target Language: {language}
+Resume Text: {resume_text}
+Target Role: {target_role}
+Response Language: {language}
 
 ### ANALYSIS LOGIC
-1. Scan the resume for technical skills (languages, frameworks, tools).
-2. Compare these skills against a standard modern stack: React, Node.js/Python, SQL/NoSQL, Git, Basic Cloud (AWS/Firebase).
-3. Identify "Critical Gaps"—skills that are missing but essential for getting hired.
-   *CRITICAL NOTE*: Our internal system has ALREADY identified these high-priority missing skills: {json.dumps(detected_missing)}. You MUST include these in your analysis and study plan.
-4. Create a "YouTube Search Query" for each gap. Do NOT generate direct YouTube URLs (links often break). Instead, generate the perfect search terms.
+1. Compare the candidate's skills against standard requirements for a {target_role}
+2. Our internal ML system has flagged these high-priority gaps: {json.dumps(detected_missing)}
+3. Identify additional critical skill gaps beyond what our system detected
+4. For each gap, create optimized YouTube search terms (use keywords like "crash course", "full tutorial", "complete guide")
 
 ### OUTPUT FORMAT
-You must output ONLY valid JSON. Do not include markdown formatting like ```json ... ```.
+Return ONLY valid JSON (no markdown, no code blocks):
 
-Structure:
 {{
-  "student_name": "Name from resume (or 'Candidate')",
-  "current_level": "Beginner/Intermediate",
-  "summary_message": "A short, encouraging 2-sentence summary in {language}.",
-  "missing_skills": ["List", "of", "Missing", "Skills"],
+  "student_name": "Name from resume or 'Candidate'",
+  "current_level": "Beginner/Intermediate/Advanced",
+  "summary": "2-3 sentence encouraging analysis in {language} about their readiness for {target_role}",
+  "skill_gaps": ["Skill 1", "Skill 2", "Skill 3"],
   "study_plan": [
     {{
-      "day": "Day 1-2",
-      "topic": "Skill Name (e.g., Redux)",
-      "reason": "One short sentence in {language} explaining why this skill is needed.",
-      "youtube_query": "best redux tutorial in {language} for beginners"
+      "topic": "Skill Name",
+      "duration": "X Days",
+      "youtube_search_term": "optimized search query for best tutorials in {language}",
+      "reason": "Why this skill is critical for {target_role} (in {language})"
     }}
-    // Generate enough items to cover the gaps (approx 2 weeks)
   ]
 }}
 
 ### CONSTRAINTS
-- The `youtube_query` must always include the skill name and the word "tutorial".
-- If the resume is very strong, suggest advanced topics (e.g., Docker, CI/CD).
-- `reason` and `summary_message` MUST be in {language}.
-- All other fields (keys, skill names) must be in English.
-        """
+- `summary` and `reason` MUST be in {language}
+- `youtube_search_term` must include skill name + "tutorial" or "crash course"
+- Generate 5-7 study plan items covering 2 weeks
+- Prioritize the gaps identified by our system: {json.dumps(detected_missing)}
+"""
 
         try:
             response = model.generate_content(prompt)
@@ -248,20 +267,35 @@ Structure:
             
             # --- MAPPING LAYER ---
             # Map new prompt keys to existing Frontend keys to prevent UI breakage
-            if 'summary_message' in json_response:
+            if 'summary' in json_response:
+                json_response['candidate_summary'] = json_response['summary']
+            elif 'summary_message' in json_response:
                 json_response['candidate_summary'] = json_response['summary_message']
+            
+            # Map skill_gaps to missing_skills for consistency
+            if 'skill_gaps' in json_response:
+                json_response['missing_skills'] = json_response['skill_gaps']
             
             if 'study_plan' in json_response:
                 for item in json_response['study_plan']:
+                    # Map reason -> description
                     if 'reason' in item:
                         item['description'] = item['reason']
+                    
+                    # Map duration -> day if needed
+                    if 'duration' in item and 'day' not in item:
+                        item['day'] = item['duration']
+                    
+                    # Map youtube_search_term -> youtube_query for consistency
+                    if 'youtube_search_term' in item:
+                        item['youtube_query'] = item['youtube_search_term']
 
             # Fallback: Validation to ensure missing_skills are present from our local model if AI forgot them
-            if not json_response.get('missing_skills'):
+            if not json_response.get('missing_skills') and not json_response.get('skill_gaps'):
                 json_response['missing_skills'] = detected_missing
             else:
                 # Merge local and AI skills to be safe
-                ai_skills = set(json_response['missing_skills'])
+                ai_skills = set(json_response.get('missing_skills', []) or json_response.get('skill_gaps', []))
                 local_skills = set(detected_missing)
                 json_response['missing_skills'] = list(ai_skills.union(local_skills))
                 

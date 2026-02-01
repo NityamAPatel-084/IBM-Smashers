@@ -13,6 +13,7 @@ function App() {
   const [file, setFile] = useState(null);
   const [text, setText] = useState('');
   const [language, setLanguage] = useState('Hindi');
+  const [targetRole, setTargetRole] = useState('Full Stack Developer');
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -64,6 +65,7 @@ function App() {
       formData.append('text', text);
     }
     formData.append('language', language);
+    formData.append('role', targetRole);
 
     try {
       const response = await axios.post('http://localhost:5000/analyze', formData);
@@ -104,7 +106,7 @@ function App() {
             </button>
           </div>
         ) : (
-          isSupabaseConfigured && !showAuth && (
+          !showAuth && (
             <button
               onClick={() => setShowAuth(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-2 text-sm font-bold px-6 py-2.5 rounded-full shadow-lg shadow-blue-600/20 active:scale-95"
@@ -144,6 +146,8 @@ function App() {
             setText={setText}
             language={language}
             setLanguage={setLanguage}
+            targetRole={targetRole}
+            setTargetRole={setTargetRole}
             onAnalyze={handleAnalyze}
             isLoading={isLoading}
           />

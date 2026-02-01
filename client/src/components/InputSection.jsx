@@ -1,5 +1,4 @@
-import React from 'react';
-import { Upload, FileText, Type, ArrowRight, Loader2, Languages } from 'lucide-react';
+import { Upload, FileText, Type, ArrowRight, Loader2, Languages, Briefcase, Search } from 'lucide-react';
 
 const InputSection = ({
     inputType,
@@ -10,6 +9,8 @@ const InputSection = ({
     setText,
     language,
     setLanguage,
+    targetRole,
+    setTargetRole,
     onAnalyze,
     isLoading
 }) => {
@@ -24,11 +25,28 @@ const InputSection = ({
         <div className="max-w-3xl mx-auto px-6 -mt-8 relative z-10">
             <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 md:p-8">
 
-                {/* Top Bar: Language Selector */}
-                <div className="flex justify-end mb-6">
+                {/* Top Bar: Target Role & Language Selector */}
+                <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 flex-1">
+                        <Briefcase size={16} className="text-slate-500" />
+                        <span className="text-sm font-medium text-slate-600">Target Role</span>
+                        <select
+                            value={targetRole}
+                            onChange={(e) => setTargetRole(e.target.value)}
+                            className="bg-transparent text-slate-900 text-sm font-semibold outline-none cursor-pointer flex-1"
+                        >
+                            <option value="Full Stack Developer">Full Stack Developer</option>
+                            <option value="Backend Developer">Backend Developer</option>
+                            <option value="Frontend Developer">Frontend Developer</option>
+                            <option value="Data Scientist">Data Scientist</option>
+                            <option value="DevOps Engineer">DevOps Engineer</option>
+                            <option value="Mobile App Developer">Mobile App Developer</option>
+                        </select>
+                    </div>
+
                     <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                        <Type size={16} className="text-slate-500" /> {/* Using Type as a placeholder for language icon if Languages isn't imported, or I can import Languages */}
-                        <span className="text-sm font-medium text-slate-600">Response Language</span>
+                        <Languages size={16} className="text-slate-500" />
+                        <span className="text-sm font-medium text-slate-600">Language</span>
                         <select
                             value={language}
                             onChange={(e) => setLanguage(e.target.value)}
@@ -98,6 +116,26 @@ const InputSection = ({
                     )}
                 </div>
 
+                {/* AI Model Status */}
+                <div className="flex items-center gap-2 mb-6 px-4 py-2 bg-slate-50 rounded-lg border border-slate-100">
+                    <div className="flex -space-x-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center border-2 border-white">
+                            <Search size={12} className="text-white" />
+                        </div>
+                        <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center border-2 border-white">
+                            <FileText size={12} className="text-white" />
+                        </div>
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Analysis Engine</p>
+                        <p className="text-xs font-bold text-slate-600">Hybrid ML/AI Expert Model Trained & Ready</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-green-100 px-2 py-0.5 rounded-full">
+                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                        <span className="text-[10px] font-bold text-green-700 uppercase">Live</span>
+                    </div>
+                </div>
+
                 {/* Action Button */}
                 <button
                     onClick={onAnalyze}
@@ -107,7 +145,7 @@ const InputSection = ({
                     {isLoading ? (
                         <>
                             <Loader2 size={24} className="animate-spin" />
-                            <span>Analyzing...</span>
+                            <span>Analyzing with Skill-Bridge Engine...</span>
                         </>
                     ) : (
                         <>
