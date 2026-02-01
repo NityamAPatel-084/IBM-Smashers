@@ -198,7 +198,10 @@ def analyze():
         print(f"Analyzing with Gemini (Language: {language}, Role: {target_role})...")
         print(f"Local Model Identified Gaps: {detected_missing}")
         
-        model = genai.GenerativeModel('gemini-pro')
+        # Expert Brain Integration: Check for custom tuned model
+        tuned_model = os.getenv("TUNED_MODEL_NAME")
+        model_name = tuned_model if tuned_model else 'gemini-1.5-flash'
+        model = genai.GenerativeModel(model_name)
         
         # Enhanced prompt combining both approaches
         prompt = f"""

@@ -72,7 +72,8 @@ function App() {
     formData.append('language', language);
     formData.append('role', targetRole);
     try {
-      const resp = await axios.post('http://localhost:5000/analyze', formData);
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const resp = await axios.post(`${API_URL}/analyze`, formData);
       setResult(resp.data);
     } catch (err) {
       setError("Analysis failed. Try again.");
