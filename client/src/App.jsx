@@ -5,11 +5,44 @@ import InputSection from './components/InputSection';
 import Results from './components/Results';
 import Auth from './components/Auth';
 import { supabase } from './supabase';
-import { AlertTriangle, LogOut } from 'lucide-react';
+import { AlertTriangle, LogOut, Bot } from 'lucide-react';
+
+const Navbar = ({ session, onLogout }) => (
+  <nav className="bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-200">
+        <Bot size={24} className="text-white" />
+      </div>
+      <div>
+        <h1 className="text-xl font-bold text-blue-600 leading-tight italic">Skill-Bridge AI</h1>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">AI Career Advisor</p>
+      </div>
+    </div>
+
+    <div className="flex items-center gap-6">
+      <div className="hidden md:flex flex-col items-end">
+        <p className="text-xs font-bold text-slate-400 uppercase">Welcome back,</p>
+        <p className="text-sm font-black text-purple-600">
+          {session?.user.user_metadata?.full_name || session?.user.email.split('@')[0]}
+        </p>
+      </div>
+      <button
+        onClick={onLogout}
+        className="flex items-center gap-2 px-4 py-2 border border-red-100 text-red-500 rounded-xl text-sm font-bold hover:bg-red-50 transition-all uppercase tracking-wider"
+      >
+        <LogOut size={16} />
+        Sign Out
+      </button>
+      <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 overflow-hidden">
+        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${session?.user.email}`} alt="Avatar" />
+      </div>
+    </div>
+  </nav>
+);
 
 function App() {
   const [session, setSession] = useState(null);
-  const [inputType, setInputType] = useState('file'); // 'file' or 'text'
+  const [inputType, setInputType] = useState('file');
   const [file, setFile] = useState(null);
   const [text, setText] = useState('');
   const [language, setLanguage] = useState('Hindi');
@@ -17,161 +50,83 @@ function App() {
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [showAuth, setShowAuth] = useState(false);
 
-  // Check if Supabase keys are configured
   const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'your_supabase_url';
 
   useEffect(() => {
-    // If not configured, bypass auth (Demo Mode)
-    if (!isSupabaseConfigured) {
-      console.warn("Supabase keys missing. Entering Demo Mode.");
-      return;
-    }
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
+    if (!isSupabaseConfigured) return;
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => subscription.unsubscribe();
   }, [isSupabaseConfigured]);
 
   const handleAnalyze = async () => {
     setError(null);
     setResult(null);
-
-    // Validation
-    if (inputType === 'file' && !file) {
-      setError("Please upload a resume PDF.");
-      return;
-    }
-    if (inputType === 'text' && !text.trim()) {
-      setError("Please enter your skills.");
-      return;
-    }
-
+    if (inputType === 'file' && !file) { setError("Please upload a resume PDF."); return; }
+    if (inputType === 'text' && !text.trim()) { setError("Please enter your skills."); return; }
     setIsLoading(true);
-
     const formData = new FormData();
-    if (inputType === 'file') {
-      formData.append('file', file);
-    } else {
-      formData.append('text', text);
-    }
+    if (inputType === 'file') formData.append('file', file);
+    else formData.append('text', text);
     formData.append('language', language);
     formData.append('role', targetRole);
-
     try {
-      const response = await axios.post('http://localhost:5000/analyze', formData);
-      setResult(response.data);
+      const resp = await axios.post('http://localhost:5000/analyze', formData);
+      setResult(resp.data);
     } catch (err) {
-      console.error(err);
-      setError("Failed to analyze. Please try again or use text input.");
+      setError("Analysis failed. Try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
+  const handleLogout = () => supabase.auth.signOut();
 
-  // Updated Auth Logic: Always show Hero.
-  // If !session, show "Sign In" button top right.
-  // If clicked, show <Auth /> below Hero.
-  // If session, show <InputSection /> (Dashboard).
-
-  return (
-    <div className="min-h-screen bg-slate-50 pb-20 font-sans relative">
-
-      {/* Top Right Navigation */}
-      <div className="absolute top-4 right-6 z-50 flex items-center gap-3">
-        {session ? (
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-slate-600 hidden md:block">
-              Welcome, {session.user.user_metadata?.full_name || session.user.email}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="text-slate-500 hover:text-red-500 transition-colors flex items-center gap-1 text-sm font-medium bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-200 shadow-sm hover:shadow-md"
-            >
-              <LogOut size={16} />
-              <span>Sign Out</span>
-            </button>
-          </div>
-        ) : (
-          !showAuth && (
-            <button
-              onClick={() => setShowAuth(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-2 text-sm font-bold px-6 py-2.5 rounded-full shadow-lg shadow-blue-600/20 active:scale-95"
-            >
-              <span>Sign In / Sign Up</span>
-            </button>
-          )
-        )}
-      </div>
-
-      <Hero />
-
-      {/* Main Content Area */}
-      {(!session && showAuth) ? (
-        <div className="container mx-auto -mt-8 relative z-20">
-          <Auth onLogin={(user) => {
-            setSession({ user });
-            setShowAuth(false);
-          }} />
-          <div className="text-center mt-6">
-            <button
-              onClick={() => setShowAuth(false)}
-              className="text-slate-500 hover:text-slate-800 text-sm font-medium underline underline-offset-4"
-            >
-              Back to Home
-            </button>
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-white font-sans">
+        <div className="relative">
+          <Hero isDashboard={false} />
+          <div className="lg:absolute lg:top-1/2 lg:right-20 lg:-translate-y-1/2 w-full lg:max-w-md px-6 pb-20 lg:pb-0">
+            <Auth onLogin={(u) => setSession({ user: u })} />
           </div>
         </div>
-      ) : (
-        <>
-          <InputSection
-            inputType={inputType}
-            setInputType={setInputType}
-            file={file}
-            setFile={setFile}
-            text={text}
-            setText={setText}
-            language={language}
-            setLanguage={setLanguage}
-            targetRole={targetRole}
-            setTargetRole={setTargetRole}
-            onAnalyze={handleAnalyze}
-            isLoading={isLoading}
-          />
+      </div>
+    );
+  }
 
-          {error && (
-            <div className="max-w-3xl mx-auto mt-6 px-6">
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+  return (
+    <div className="min-h-screen bg-[#f8faff] pb-20 font-sans">
+      <Navbar session={session} onLogout={handleLogout} />
+
+      {!result ? (
+        <>
+          <Hero isDashboard={true} />
+          <div className="max-w-4xl mx-auto -mt-10 px-6">
+            <InputSection
+              inputType={inputType} setInputType={setInputType}
+              file={file} setFile={setFile}
+              text={text} setText={setText}
+              language={language} setLanguage={setLanguage}
+              targetRole={targetRole} setTargetRole={setTargetRole}
+              onAnalyze={handleAnalyze} isLoading={isLoading}
+            />
+            {error && (
+              <div className="mt-6 bg-red-50 border border-red-100 p-4 rounded-2xl flex items-center gap-3 text-red-600 font-bold">
                 <AlertTriangle size={20} />
                 {error}
               </div>
-            </div>
-          )}
-
-          {result && <Results data={result} />}
+            )}
+          </div>
         </>
+      ) : (
+        <Results data={result} onReset={() => setResult(null)} session={session} />
       )}
 
-      {/* Footer */}
-      <footer className="py-8 text-center text-slate-400 text-sm font-medium">
-        <p>
-          Built with <span className="text-red-500">❤️</span> for Indian Students | Powered by AI
-        </p>
+      <footer className="mt-20 py-8 text-center text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">
+        Skill-Bridge AI • Empowering Careers with Intelligence
       </footer>
-
     </div>
   );
 }
